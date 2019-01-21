@@ -2,3 +2,9 @@
 MQ/\.idea/
 
 Sensors/DS18B20/\.idea/
+
+MQ/AWSIoTPythonSDK/
+
+MQ/venv/
+
+Sensors/DS18B20/venv/

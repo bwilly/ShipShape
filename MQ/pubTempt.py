@@ -11,7 +11,7 @@
  * or in the "license" file accompanying this file. This file is distributed
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
  * express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
+ * permissions and limitations under the Licens5e.
  */
  '''
 
@@ -20,6 +20,7 @@ import logging
 import time
 import argparse
 import json
+import ConfigParser
 
 AllowedActions = ['both', 'publish', 'subscribe']
 
@@ -34,8 +35,8 @@ def customCallback(client, userdata, message):
 
 # Read in command-line parameters
 parser = argparse.ArgumentParser()
-parser.add_argument("-e", "--endpoint", action="store", required=True, dest="host", help="Your AWS IoT custom endpoint")
-parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
+parser.add_argument("-e", "--endpoint", action="store", dest="host", help="Your AWS IoT custom endpoint")
+parser.add_argument("-r", "--rootCA", action="store", dest="rootCAPath", help="Root CA file path")
 parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
 parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
 parser.add_argument("-p", "--port", action="store", dest="port", type=int, help="Port number override")
@@ -59,6 +60,18 @@ useWebsocket = args.useWebsocket
 clientId = args.clientId
 topic = args.topic
 
+# config
+config = ConfigParser.ConfigParser()
+config.read('srlAwsConfig.ini')
+
+privateKeyPath = config.get('DEFAULT','PRIVATE_KEY_FILE')
+# publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
+certificatePath = config.get('DEFAULT','CERT_FILE')
+rootCAPath = config.get('DEFAULT',"ROOT_CA")
+topic = config.get('DEFAULT',"TOPIC")
+host = config.get('DEFAULT',"ENDPOINT")
+
+
 if args.mode not in AllowedActions:
     parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
     exit(2)
@@ -67,8 +80,8 @@ if args.useWebsocket and args.certificatePath and args.privateKeyPath:
     parser.error("X.509 cert authentication and WebSocket are mutual exclusive. Please pick one.")
     exit(2)
 
-if not args.useWebsocket and (not args.certificatePath or not args.privateKeyPath):
-    parser.error("Missing credentials for authentication.")
+if not args.useWebsocket and not privateKeyPath:
+    parser.error("Missing credentials for authentication." + privateKeyPath)
     exit(2)
 
 # Port defaults
@@ -84,6 +97,7 @@ streamHandler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
+
 
 # Init AWSIoTMQTTClient
 myAWSIoTMQTTClient = None
@@ -122,3 +136,8 @@ while True:
             print('Published topic %s: %s\n' % (topic, messageJson))
         loopCount += 1
     time.sleep(1)
+
+    # Jan 2019
+    #todo:workingHere: pull in key config from json config file
+    # then write to topic
+    # then run this every 10 mins to update tempt to topic
