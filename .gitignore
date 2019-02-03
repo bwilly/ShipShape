@@ -8,3 +8,5 @@ MQ/AWSIoTPythonSDK/
 MQ/venv/
 
 Sensors/DS18B20/venv/
+
+venv/
