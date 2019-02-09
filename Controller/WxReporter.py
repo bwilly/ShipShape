@@ -27,20 +27,29 @@ class WxReporter(object):
             return devicelist
 
     def assertFoundSensorsEqualConfig(self):
-        physSensors = self.listSensors()
-        if physSensors == None:
+        sensorsPhys = self.listSensors()
+        if sensorsPhys == None:
             print("No physical DS W1 sensors found.")
             return None
 
-        for sensor in self.loadSensorConfigDict()['sensorGroup']:
-            sensorId = sensor['deviceId']
-            if(physSensors[sensorId]): print("found " + sensorId)
-            else: print("NOT found " + sensorId)
+        sensorsConfig = self.loadSensorConfigDict()['sensorGroup']
 
+        for sensorConfig in sensorsConfig:
+            matchedSensor = sensorsPhys.index(sensorConfig['deviceId'])
+            if matchedSensor:
+                print 'match: ' + matchedSensor
+
+            else:
+                print 'Not found: ' + sensorConfig['deviceId']
 
 
 # dev-time test
 reporter = WxReporter()
 dict = reporter.listSensors()
-print(dict)
+print 'physical sensors: '
+if dict is not None:
+    for entry in dict:
+        print entry
+else:
+    print 'none'
 reporter.assertFoundSensorsEqualConfig()
