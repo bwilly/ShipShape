@@ -19,8 +19,6 @@ loopCount = 0
 while loopCount < 1 :
     message = {}
     message['thingName'] = 'sampleThing'
-    # message['timestamp'] = loopCount
-    # message['sensorTime'] = str(time.clock())
     message['sensorTime'] = str(time.time())
     messageJson = json.dumps(message)
 

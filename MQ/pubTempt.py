@@ -24,120 +24,119 @@ import ConfigParser
 
 AllowedActions = ['both', 'publish', 'subscribe']
 
-# Custom MQTT message callback
-def customCallback(client, userdata, message):
-    print("Received a new message: ")
-    print(message.payload)
-    print("from topic: ")
-    print(message.topic)
-    print("--------------\n\n")
+class Publisher:
+
+    # Custom MQTT message callback
+    def customCallback(client, userdata, message):
+        print("Received a new message: ")
+        print(message.payload)
+        print("from topic: ")
+        print(message.topic)
+        print("--------------\n\n")
+
+    @property
+    def msg(self):
+        return self.__msg
+
+    @msg.setter
+    def msg(self, msg):
+        self.__msg = msg
+
+    # Read in command-line parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-w", "--websocket", action="store_true", dest="useWebsocket", default=False, help="Use MQTT over WebSocket")
+    #parser.add_argument("-t", "--topic", action="store", dest="topic", default="sdk/test/Python", help="Targeted topic")
+    # parser.add_argument("-m", "--mode", action="store", dest="mode", default="both", help="Operation modes: %s"%str(AllowedActions))
+    parser.add_argument("-m", "--mode", action="store", dest="mode", default="publish", help="Operation modes: %s"%str(AllowedActions))
+    #parser.add_argument("-M", "--message", action="store", dest="message", default="Hello World!", help="Message to publish")
+
+    # Jan19 -- args aren't or shouldn't be used anymore.
+    args = parser.parse_args()
+    # port = args.port
+    useWebsocket = args.useWebsocket
 
 
-# Read in command-line parameters
-parser = argparse.ArgumentParser()
-parser.add_argument("-e", "--endpoint", action="store", dest="host", help="Your AWS IoT custom endpoint")
-parser.add_argument("-r", "--rootCA", action="store", dest="rootCAPath", help="Root CA file path")
-parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
-parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
-parser.add_argument("-p", "--port", action="store", dest="port", type=int, help="Port number override")
-parser.add_argument("-w", "--websocket", action="store_true", dest="useWebsocket", default=False,
-                    help="Use MQTT over WebSocket")
-parser.add_argument("-id", "--clientId", action="store", dest="clientId", default="basicPubSub",
-                    help="Targeted client id")
-parser.add_argument("-t", "--topic", action="store", dest="topic", default="sdk/test/Python", help="Targeted topic")
-parser.add_argument("-m", "--mode", action="store", dest="mode", default="both",
-                    help="Operation modes: %s"%str(AllowedActions))
-parser.add_argument("-M", "--message", action="store", dest="message", default="Hello World!",
-                    help="Message to publish")
+    # config
+    config = ConfigParser.ConfigParser()
+    config.read('srlAwsConfig.ini')
 
-args = parser.parse_args()
-host = args.host
-rootCAPath = args.rootCAPath
-certificatePath = args.certificatePath
-privateKeyPath = args.privateKeyPath
-port = args.port
-useWebsocket = args.useWebsocket
-clientId = args.clientId
-topic = args.topic
+    privateKeyPath = config.get('DEFAULT','PRIVATE_KEY_FILE')
+    # publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
+    certificatePath = config.get('DEFAULT','CERT_FILE')
+    rootCAPath = config.get('DEFAULT',"ROOT_CA")
+    topic = config.get('DEFAULT',"TOPIC")
+    host = config.get('DEFAULT',"ENDPOINT")
 
-# config
-config = ConfigParser.ConfigParser()
-config.read('srlAwsConfig.ini')
+    # test
+    # _message = "testMsg"
+    _message = msg
 
-privateKeyPath = config.get('DEFAULT','PRIVATE_KEY_FILE')
-# publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
-certificatePath = config.get('DEFAULT','CERT_FILE')
-rootCAPath = config.get('DEFAULT',"ROOT_CA")
-topic = config.get('DEFAULT',"TOPIC")
-host = config.get('DEFAULT',"ENDPOINT")
+    if args.mode not in AllowedActions:
+        parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
+        exit(2)
+
+    if args.useWebsocket and args.certificatePath and args.privateKeyPath:
+        parser.error("X.509 cert authentication and WebSocket are mutual exclusive. Please pick one.")
+        exit(2)
+
+    if not args.useWebsocket and not privateKeyPath:
+        parser.error("Missing credentials for authentication." + privateKeyPath)
+        exit(2)
+
+    # Port defaults
+    if args.useWebsocket:  # When no port override for WebSocket, default to 443
+        port = 443
+    if not args.useWebsocket:  # When no port override for non-WebSocket, default to 8883
+        port = 8883
+
+    # Configure logging
+    logger = logging.getLogger("AWSIoTPythonSDK.core")
+    logger.setLevel(logging.ERROR)
+    streamHandler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    streamHandler.setFormatter(formatter)
+    logger.addHandler(streamHandler)
+
+    clientId = 'testClient'  # + str(time.clock()) # if same name then cxn prob possible if reused before recycled |bwilly
+
+    # Init AWSIoTMQTTClient
+    myAWSIoTMQTTClient = None
+    if useWebsocket:
+        myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId, useWebsocket=True)
+        myAWSIoTMQTTClient.configureEndpoint(host, port)
+        myAWSIoTMQTTClient.configureCredentials(rootCAPath)
+    else:
+        myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId)
+        myAWSIoTMQTTClient.configureEndpoint(host, port)
+        myAWSIoTMQTTClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
+
+    # AWSIoTMQTTClient connection configuration
+    myAWSIoTMQTTClient.configureAutoReconnectBackoffTime(1, 32, 20)
+    myAWSIoTMQTTClient.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+    myAWSIoTMQTTClient.configureDrainingFrequency(2)  # Draining: 2 Hz
+    myAWSIoTMQTTClient.configureConnectDisconnectTimeout(10)  # 10 sec
+    myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
+
+    def publish(self, msg):
+        # Connect and subscribe to AWS IoT
+        self.myAWSIoTMQTTClient.connect()
+        #if args.mode == 'both' or args.mode == 'subscribe':
+        # self.myAWSIoTMQTTClient.subscribe(self.topic, 1, self.customCallback)
+        time.sleep(2)
+
+        if self.args.mode == 'both' or self.args.mode == 'publish':
+            message = {}
+            message['message'] = msg
+            messageJson = json.dumps(message)
+            self.myAWSIoTMQTTClient.publishAsync(self.topic, messageJson, 1)  # was sync
+            print('Published topic %s: %s\n' % (self.topic, messageJson))
+
+        self.myAWSIoTMQTTClient.disconnect()
 
 
-if args.mode not in AllowedActions:
-    parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
-    exit(2)
+        # Jan 2019
+        #todo:workingHere: pull in key config from json config file
+        # then write to topic
+        # then run this every 10 mins to update tempt to topic
 
-if args.useWebsocket and args.certificatePath and args.privateKeyPath:
-    parser.error("X.509 cert authentication and WebSocket are mutual exclusive. Please pick one.")
-    exit(2)
-
-if not args.useWebsocket and not privateKeyPath:
-    parser.error("Missing credentials for authentication." + privateKeyPath)
-    exit(2)
-
-# Port defaults
-if args.useWebsocket and not args.port:  # When no port override for WebSocket, default to 443
-    port = 443
-if not args.useWebsocket and not args.port:  # When no port override for non-WebSocket, default to 8883
-    port = 8883
-
-# Configure logging
-logger = logging.getLogger("AWSIoTPythonSDK.core")
-logger.setLevel(logging.DEBUG)
-streamHandler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-streamHandler.setFormatter(formatter)
-logger.addHandler(streamHandler)
-
-
-# Init AWSIoTMQTTClient
-myAWSIoTMQTTClient = None
-if useWebsocket:
-    myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId, useWebsocket=True)
-    myAWSIoTMQTTClient.configureEndpoint(host, port)
-    myAWSIoTMQTTClient.configureCredentials(rootCAPath)
-else:
-    myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId)
-    myAWSIoTMQTTClient.configureEndpoint(host, port)
-    myAWSIoTMQTTClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
-
-# AWSIoTMQTTClient connection configuration
-myAWSIoTMQTTClient.configureAutoReconnectBackoffTime(1, 32, 20)
-myAWSIoTMQTTClient.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
-myAWSIoTMQTTClient.configureDrainingFrequency(2)  # Draining: 2 Hz
-myAWSIoTMQTTClient.configureConnectDisconnectTimeout(10)  # 10 sec
-myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
-
-# Connect and subscribe to AWS IoT
-myAWSIoTMQTTClient.connect()
-#if args.mode == 'both' or args.mode == 'subscribe':
-#    myAWSIoTMQTTClient.subscribe(topic, 1, customCallback)
-time.sleep(2)
-
-# Publish to the same topic in a loop forever
-loopCount = 0
-while True:
-    if args.mode == 'both' or args.mode == 'publish':
-        message = {}
-        message['message'] = args.message
-        message['sequence'] = loopCount
-        messageJson = json.dumps(message)
-        myAWSIoTMQTTClient.publish(topic, messageJson, 1)
-        if args.mode == 'publish':
-            print('Published topic %s: %s\n' % (topic, messageJson))
-        loopCount += 1
-    time.sleep(1)
-
-    # Jan 2019
-    #todo:workingHere: pull in key config from json config file
-    # then write to topic
-    # then run this every 10 mins to update tempt to topic
+        # 1. create setter for tempt message that accetps timestamp and temp and location and topic

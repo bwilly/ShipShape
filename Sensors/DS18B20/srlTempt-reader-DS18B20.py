@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sqlite3
+
 
 import os
 import time
@@ -18,15 +18,15 @@ import glob
 
 # global variables
 speriod = (15 * 60) - 1
-dbname = '/home/pi/data/srlTempts.db'
+
 
 
 # store the temperature in the database
-def log_temperature(temp, deviceid):
+def log_temperature(tempt, sensorName):
     conn = sqlite3.connect(dbname)
     curs = conn.cursor()
 
-    curs.execute("INSERT INTO temps values(datetime('now'), (?), (?))", (temp, deviceid,))
+    curs.execute("INSERT INTO temps values(datetime('now'), (?), (?))", (tempt, sensorName,))
 
     # commit the changes
     conn.commit()
@@ -76,8 +76,8 @@ def get_temp(devicefile):
 
 # main function
 # This is where the program starts
-def devicetempt(deviceindex, deviceid):
-    print ('devicetempt for index: ') + "[{}], {}".format(deviceindex, deviceid)
+def devicetempt(sensorId, sensorName):
+    print ('devicetempt for index: ') + "[{}], {}".format(sensorId, sensorName)
 
     # todo:give better error if array item in device list does not exist
 
@@ -91,7 +91,7 @@ def devicetempt(deviceindex, deviceid):
         return None
     else:
         # append /w1slave to the device file
-        w1devicefile = devicelist[deviceindex] + '/w1_slave'
+        w1devicefile = devicelist[sensorId] + '/w1_slave'
     # bwilly use param for device index
 
     #    while True:
@@ -106,13 +106,6 @@ def devicetempt(deviceindex, deviceid):
         temperature = get_temp(w1devicefile)
         print "temperature=" + str(temperature)
 
-        # Store the temperature in the database
-    # log_temperature(temperature,deviceid)
-
-    # display the contents of the database
-
-
-#        display_data()
 
 #        time.sleep(speriod)
 

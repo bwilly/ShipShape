@@ -1,0 +1,14 @@
+{
+
+  "sensorGroup": [
+    {
+      "sensorName": "eastDoor",
+      "deviceId": "28-00000530087c"
+    },
+    {
+      "sensorName": "turtleTank",
+      "deviceId": "28-02039246ae40"
+    }
+  ]
+
+}
