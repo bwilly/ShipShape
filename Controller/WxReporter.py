@@ -35,7 +35,9 @@ class WxReporter(object):
         sensorsConfig = self.loadSensorConfigDict()['sensorGroup']
 
         for sensorConfig in sensorsConfig:
-            matchedSensor = sensorsPhys.index(sensorConfig['deviceId'])
+            uConfigId = sensorConfig['deviceId']
+            configId = uConfigId.encode('ascii','ignore')
+            matchedSensor = sensorsPhys.index(configId)
             if matchedSensor:
                 print 'match: ' + matchedSensor
 
