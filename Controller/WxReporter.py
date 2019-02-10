@@ -81,8 +81,9 @@ class WxReporter(object):
                 self.unavailableSensorIdList.append(configId)
 
     def readTemperature(self, sensorName):
-
-        reader = DallasTemptReaderDS18B20()
+        for device in self.availableSensorName2DeviceDict:
+            reader = DallasTemptReaderDS18B20(device)
+            print reader.readDeviceTempt()
 
     def __init__(self):
         self.loadConfigVals()
@@ -94,9 +95,9 @@ class DallasTemptReaderDS18B20(object):
 
     # get temerature
     # returns None on error, or the temperature as a float
-    def readDeviceTempt(self, devicefile):
+    def readDeviceTempt(self):
         try:
-            fileobj = open(devicefile, 'r')
+            fileobj = open(self.devicefile, 'r')
             lines = fileobj.readlines()
             fileobj.close()
         except:
@@ -137,3 +138,4 @@ reporter.populateFoundList()
 print "Found " + str(reporter.availableSensorIdList)
 print "Found " + str(reporter.availableSensorName2DeviceDict)
 print "NOT found" + str(reporter.unavailableSensorIdList)
+reporter.readTemperature("unused")
