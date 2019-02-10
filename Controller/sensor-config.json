@@ -1,9 +1,17 @@
 {
   "pathParts": {
-  "prefix":"/dev/",
-  "root":"p*",
-  "suffix": "/w1_slave"},
+  "prefix":"/Users/bwilly/Projects/Projects/YachtMonitor2019/ShipShape/Controller/test/content/",
+  "root":"fol*",
+  "suffix": "/temperatureMock.txt"},
   "sensorGroup": [
+    {
+      "sensorName": "localFileFolder_positiveTest",
+      "deviceId": "folder_positive"
+    },
+    {
+      "sensorName": "localFileFolder_negativeTest",
+      "deviceId": "folder_negative"
+    },
     {
       "sensorName": "eastDoor",
       "deviceId": "28-00000530087c"
@@ -11,10 +19,6 @@
     {
       "sensorName": "turtleTank",
       "deviceId": "28-02039246ae40"
-    },
-    {
-      "sensorName": "test",
-      "deviceId": "ptyvb"
     }
   ]
 }

@@ -41,6 +41,8 @@ class WxReporter(object):
         else:
             return devicelist
 
+    # Convert list of found sensors into dictionary, with key that of the json file definition
+    # Drop sensors that are not in config file
     def dictSensors(self):
         sensordict = {}
         sensorlist = self.listSensors(self.sensorPathPrefix, self.sensorPathRoot)
@@ -75,15 +77,16 @@ class WxReporter(object):
             try:
                 matchedSensor = sensorsPhys[configId]
                 self.availableSensorIdList.append(configId)
-                self.availableSensorName2DeviceDict[configName] = str(matchedSensor) + self.sensorPathSuffix
+                self.availableSensorName2DeviceDict[configName] = str(str(matchedSensor) + self.sensorPathSuffix).encode('ascii','ignore')
 
             except   KeyError:
                 self.unavailableSensorIdList.append(configId)
 
     def readTemperature(self, sensorName):
-        for device in self.availableSensorName2DeviceDict:
+        for key in self.availableSensorName2DeviceDict:
+            device = self.availableSensorName2DeviceDict[key]
             reader = DallasTemptReaderDS18B20(device)
-            print reader.readDeviceTempt()
+            print "WxReporter [" + key + "] celcius: " + str(reader.readDeviceTempt())
 
     def __init__(self):
         self.loadConfigVals()
@@ -115,10 +118,11 @@ class DallasTemptReaderDS18B20(object):
             tempstr = rawline[tempstartindex:-1]
             print "tempstr: " + tempstr
             tempvalue = float(tempstr) / 1000
-            print tempvalue
+            print "tempt C: " + str(tempvalue)
             return tempvalue
         else:
-            print "There was an error."
+            print "There was an error in the read content. Status: " + str(status)
+            print lines
             return None
 
     def __init__(self, devicefile):
