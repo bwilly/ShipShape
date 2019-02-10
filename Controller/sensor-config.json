@@ -1,7 +1,8 @@
 {
   "pathParts": {
   "prefix":"/dev/",
-  "root":"p*"},
+  "root":"p*",
+  "suffix": "/w1_slave"},
   "sensorGroup": [
     {
       "sensorName": "eastDoor",
