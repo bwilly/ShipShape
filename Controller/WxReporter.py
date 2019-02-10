@@ -6,7 +6,17 @@ import glob
 # Singleton
 class WxReporter(object):
 
-    def loadSensorConfigDict(self) :
+    sensorPathPrefix = ''  # /sys/bus/w1/devices/
+    sensorPathRoot = ''    # 28*
+    availableSensorIdList = []
+    unavailableSensorIdList = []
+
+    def loadConfigVals(self):
+        config = self.loadSensorConfigDict()
+        self.sensorPathPrefix = config['pathParts']['prefix']
+        self.sensorPathRoot = config['pathParts']['root']
+
+    def loadSensorConfigDict(self):
         with open('sensor-config.json') as config_file:
             return json.load(config_file)
 
@@ -26,11 +36,25 @@ class WxReporter(object):
         else:
             return devicelist
 
+    def dictSensors(self):
+        sensordict = {}
+        sensorlist = self.listSensors(self.sensorPathPrefix, self.sensorPathRoot)
+
+        if sensorlist is None: return None
+
+        name = ''
+        parts = []
+
+        for path in sensorlist:
+            parts = path.split("/")
+            sensordict[parts[len(parts)-1]] = path
+
+        return sensordict
+
     def assertFoundSensorsEqualConfig(self):
 
-        # sensorsPhys = self.listSensors()
-        sensorsPhys = self.listSensors('/dev/', 'p*')
-        if sensorsPhys == None:
+        sensorsPhys = self.dictSensors()
+        if sensorsPhys is None:
             print("No physical DS W1 sensors found.")
             return None
 
@@ -40,12 +64,15 @@ class WxReporter(object):
             uConfigId = sensorConfig['deviceId']
             configId = uConfigId.encode('ascii','ignore')
             try:
-                matchedSensor = sensorsPhys.index(configId)
-                print 'match: ' + matchedSensor
+                matchedSensor = sensorsPhys[configId]
+                self.availableSensorIdList.append(configId)
+
             except:
-                print 'Not found: ' + sensorConfig['deviceId']
+                self.unavailableSensorIdList.append(configId)
                 
 
+    def __init__(self):
+        self.loadConfigVals()
 
 # dev-time test
 reporter = WxReporter()
@@ -57,3 +84,5 @@ reporter = WxReporter()
 # else:
 #     print 'none'
 reporter.assertFoundSensorsEqualConfig()
+print "Found " + str(reporter.availableSensorIdList)
+print "NOT found" + str(reporter.unavailableSensorIdList)
