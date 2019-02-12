@@ -17,7 +17,7 @@ class WxReporter(object):
 
     def loadConfigVals(self):
         config = self.loadSensorConfigDict()
-        self.sensorPathPrefix = config['pathParts']['prefix']
+        self.sensorPathPrefix = config['pathParts']['prefix']  # todo:bug: if the prefix is not found, then the not-found bucket will be empty. Instead, it should have all the sensors for the json, as none will be found
         self.sensorPathRoot = config['pathParts']['root']
         self.sensorPathSuffix = config['pathParts']['suffix']
 

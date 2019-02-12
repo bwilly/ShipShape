@@ -20,6 +20,8 @@ while loopCount < 1 :
     message = {}
     message['thingName'] = 'sampleThing'
     message['sensorTime'] = str(time.time())
+    days = [time.strftime("%a %b %y")]
+    message['sensorTimePretty'] = str(days)
     messageJson = json.dumps(message)
 
     # publisher.publish(messageJson) Why did the sample work but for real data, i must .loads as below?

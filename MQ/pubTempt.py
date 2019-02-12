@@ -24,6 +24,7 @@ import ConfigParser
 
 AllowedActions = ['both', 'publish', 'subscribe']
 
+#  todo: this feels very scripty
 class Publisher:
 
     # Custom MQTT message callback
