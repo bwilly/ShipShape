@@ -6,14 +6,16 @@ import os
 import time
 import glob
 
-# @example: remote debug for python (Mar16-2014)
-#import sys
-#import socket
-#sys.path.append(r'/home/pi/pysrc')
-#import pydevd
-#pydevd.settrace('192.168.5.100')
+# Obsolete in favor of /Controller/WxReporter (Feb19)
 
-#This file is run by setting a recurring job in crontab |bwilly Dec23-18
+# @example: remote debug for python (Mar16-2014)
+# import sys
+# import socket
+# sys.path.append(r'/home/pi/pysrc')
+# import pydevd
+# pydevd.settrace('192.168.5.100')
+
+# This file is run by setting a recurring job in crontab |bwilly Dec23-18
 
 
 # global variables

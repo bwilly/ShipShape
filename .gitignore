@@ -12,3 +12,7 @@ Sensors/DS18B20/venv/
 venv/
 
 \.DS_Store
+
+\.idea/
+
+*.pyc

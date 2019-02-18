@@ -2,8 +2,9 @@ import json
 import os
 import glob
 
+from Sensors.DS18B20.DS18B20Reader import DallasTemptReaderDS18B20
 
-# Singleton
+
 class WxReporter(object):
 
     sensorPathPrefix = ''  # /sys/bus/w1/devices/
@@ -83,50 +84,16 @@ class WxReporter(object):
                 self.unavailableSensorIdList.append(configId)
 
     def readTemperature(self, sensorName):
-        for key in self.availableSensorName2DeviceDict:
-            device = self.availableSensorName2DeviceDict[key]
-            reader = DallasTemptReaderDS18B20(device)
-            print "WxReporter [" + key + "] celcius: " + str(reader.readDeviceTempt())
+        device = self.availableSensorName2DeviceDict[sensorName]
+        reader = DallasTemptReaderDS18B20(device)
+        print "WxReporter SensorName[" + sensorName + "] celcius: " + str(reader.readDeviceTempt())
 
+    # workingHere
+    # def publishValue(self, payload):
+    #     publisher = Publisher()
+    #
     def __init__(self):
         self.loadConfigVals()
-
-
-class DallasTemptReaderDS18B20(object):
-
-    devicefile = ''
-
-    # get temerature
-    # returns None on error, or the temperature as a float
-    def readDeviceTempt(self):
-        try:
-            fileobj = open(self.devicefile, 'r')
-            lines = fileobj.readlines()
-            fileobj.close()
-        except:
-            print 'exception on fileobj open'
-            return None
-
-        # get the status from the end of line 1
-        status = lines[0][-4:-1]
-
-        # is the status is ok, get the temperature from line 2
-        if status == "YES":
-            print status
-            rawline = lines[1]  # lines[1][-6:-1]
-            tempstartindex = rawline.find("=") + 1
-            tempstr = rawline[tempstartindex:-1]
-            print "tempstr: " + tempstr
-            tempvalue = float(tempstr) / 1000
-            print "tempt C: " + str(tempvalue)
-            return tempvalue
-        else:
-            print "There was an error in the read content. Status: " + str(status)
-            print lines
-            return None
-
-    def __init__(self, devicefile):
-        self.devicefile = devicefile
 
 
 # dev-time test
@@ -142,4 +109,7 @@ reporter.populateFoundList()
 print "Found " + str(reporter.availableSensorIdList)
 print "Found " + str(reporter.availableSensorName2DeviceDict)
 print "NOT found" + str(reporter.unavailableSensorIdList)
-reporter.readTemperature("unused")
+
+print "\nLooping found sensors..."
+for sensor in reporter.availableSensorName2DeviceDict:
+    reporter.readTemperature(sensor)

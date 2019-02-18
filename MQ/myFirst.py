@@ -4,6 +4,10 @@ import time
 import argparse
 import json
 
+# todo: scrap that file. I don't even know if it works.
+#  has been superceeed by pubTemptTest and pubTempt
+
+
 AllowedActions = ['both', 'publish', 'subscribe']
 
 # Custom MQTT message callback
@@ -30,11 +34,11 @@ loopCount = 0
 while True:
 
     message = {}
-    message['message'] = "args.messagexxx"
+    message['message'] = args.message
     message['sequence'] = loopCount
     messageJson = json.dumps(message)
 
-    print('Published topic %s: %s\n' % ("topicxxx", messageJson))
+    print('Published topic %s: %s\n' % ("test/sensor/wx", messageJson))
     loopCount += 1
     time.sleep(1)
 

@@ -18,6 +18,7 @@ publisher = Publisher()
 loopCount = 0
 while loopCount < 1 :
     message = {}
+
     message['thingName'] = 'sampleThing'
     message['sensorTime'] = str(time.time())
     days = [time.strftime("%a %b %y")]
