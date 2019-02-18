@@ -16,7 +16,7 @@ publisher = Publisher()
 
 # Publish to the same topic in a loop forever
 loopCount = 0
-while loopCount < 1 :
+while loopCount < 1:
     message = {}
 
     message['thingName'] = 'sampleThing'
@@ -25,14 +25,14 @@ while loopCount < 1 :
     message['sensorTimePretty'] = str(days)
     messageJson = json.dumps(message)
 
-    # publisher.publish(messageJson) Why did the sample work but for real data, i must .loads as below?
+    # publisher.publish(messageJson) todo:research Why did the sample work but for real data, i must .loads as below?
     publisher.publish(json.loads(messageJson))
 
     loopCount += 1
     time.sleep(1)
 
     # Jan 2019
-    #todo:workingHere: pull in key config from json config file
+    # todo:workingHere: pull in key config from json config file
     # then write to topic
     # then run this every 10 mins to update tempt to topic
 

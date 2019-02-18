@@ -17,7 +17,6 @@
 
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import logging
-import time
 import argparse
 
 

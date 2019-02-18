@@ -3,7 +3,8 @@ import os
 import glob
 
 from Sensors.DS18B20.DS18B20Reader import DallasTemptReaderDS18B20
-
+from MQ.pubTempt import Publisher
+# from MQ.pubTempt import buildTemptMsg
 
 class WxReporter(object):
 
@@ -86,13 +87,16 @@ class WxReporter(object):
     def readTemperature(self, sensorName):
         device = self.availableSensorName2DeviceDict[sensorName]
         reader = DallasTemptReaderDS18B20(device)
-        print "WxReporter SensorName[" + sensorName + "] celcius: " + str(reader.readDeviceTempt())
+        tempt = reader.readDeviceTempt()
+        print "WxReporter SensorName[" + sensorName + "] celcius: " + str(tempt)
+        return tempt
 
-    # workingHere
-    # def publishValue(self, payload):
-    #     publisher = Publisher()
-    #
+    def publishValue(self, jsonPayload):
+        publisher = Publisher()
+        publisher.publish(jsonPayload)
+
     def __init__(self):
+
         self.loadConfigVals()
 
 
@@ -112,4 +116,8 @@ print "NOT found" + str(reporter.unavailableSensorIdList)
 
 print "\nLooping found sensors..."
 for sensor in reporter.availableSensorName2DeviceDict:
-    reporter.readTemperature(sensor)
+    tempt = reporter.readTemperature(sensor)
+    print "\nreturn val " + str(tempt) + "\n"
+    publisher = Publisher()
+    msg = publisher.buildTemptMsg(sensor, tempt, 'C') # todo: publisher is instantiated in publishValue, too, so pick a place
+    reporter.publishValue(msg)

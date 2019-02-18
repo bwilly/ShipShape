@@ -1,5 +1,5 @@
 {
-
+  "comment": "this file works w/ the legacy tempt reader of pre-Feb19 ",
   "sensorGroup": [
     {
       "sensorName": "eastDoor",

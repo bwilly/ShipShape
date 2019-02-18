@@ -24,8 +24,12 @@ import ConfigParser
 
 AllowedActions = ['both', 'publish', 'subscribe']
 
+
 #  todo: this feels very scripty
-class Publisher:
+class Publisher(object):
+
+    def __init__(self):
+        pass
 
     # Custom MQTT message callback
     def customCallback(client, userdata, message):
@@ -59,12 +63,14 @@ class Publisher:
 
     # config
     config = ConfigParser.ConfigParser()
-    config.read('srlAwsConfig.ini')
+    config.read('../MQ/srlAwsConfig.ini')
 
-    privateKeyPath = config.get('DEFAULT','PRIVATE_KEY_FILE')
+    basePath = config.get('DEFAULT','KEY_PATH')
+
+    privateKeyPath = basePath + config.get('DEFAULT','PRIVATE_KEY_FILE')
     # publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
-    certificatePath = config.get('DEFAULT','CERT_FILE')
-    rootCAPath = config.get('DEFAULT',"ROOT_CA")
+    certificatePath = basePath + config.get('DEFAULT','CERT_FILE')
+    rootCAPath = basePath + config.get('DEFAULT',"ROOT_CA")
     topic = config.get('DEFAULT',"TOPIC")
     host = config.get('DEFAULT',"ENDPOINT")
 
@@ -134,10 +140,30 @@ class Publisher:
 
         self.myAWSIoTMQTTClient.disconnect()
 
-
         # Jan 2019
-        #todo:workingHere: pull in key config from json config file
+        # todo:workingHere: pull in key config from json config file
         # then write to topic
         # then run this every 10 mins to update tempt to topic
 
         # 1. create setter for tempt message that accetps timestamp and temp and location and topic
+
+    # todo: move this method outside of publish class, as class should know nothing about how to build msg. tried as jsut a def outisde class, but compilter/runner fialed with from AWSIoTPythonSDK.core.util.providers import CertificateCredentialsProvider \n ImportError: No module named AWSIoTPythonSDK.core.util.providers
+    #  Message (during dev/test) to Published topic test/sensor/wx:
+    #  {"message": {"sensorTimePretty": "['Sun Feb 19']", "thingName": "sampleThing", "sensorTime": "1550462372.49"}}
+    # returns msg as string
+    def buildTemptMsg(self, sensorName, temperature, unit):
+
+        message = {}
+
+        message['thingName'] = 'sampleThing'
+        message['sensorName'] = sensorName
+        message['tempt'] = temperature
+        message['unit'] = unit
+        message['sensorTime'] = str(time.time())
+        days = [time.strftime("%a %b %y")]
+        message['sensorTimePretty'] = str(days)
+        messageJson = json.dumps(message)
+
+        return messageJson
+
+
