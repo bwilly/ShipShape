@@ -12,7 +12,11 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-publisher = Publisher()
+# refactored out of publisher and to here as constructor param, so here are the former internal vals
+# config.read('../MQ/srlAwsConfig.ini')
+# config.read('MQ/srlAwsConfig.ini')
+
+publisher = Publisher('srlAwsConfig-test.ini')
 
 # Publish to the same topic in a loop forever
 loopCount = 0
@@ -25,7 +29,7 @@ while loopCount < 1:
     message['sensorTimePretty'] = str(days)
     messageJson = json.dumps(message)
 
-    # publisher.publish(messageJson) todo:research Why did the sample work but for real data, i must .loads as below?
+    # publisher.publish(messageJson) # todo:research Why did the sample work but for real data, i must .loads as below?
     publisher.publish(json.loads(messageJson))
 
     loopCount += 1

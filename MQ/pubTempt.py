@@ -28,8 +28,20 @@ AllowedActions = ['both', 'publish', 'subscribe']
 #  todo: this feels very scripty
 class Publisher(object):
 
-    def __init__(self):
-        pass
+    _iniConfigPath = "not yet set"
+    _privateKeyPath = "not yet set"
+    _rootCAPath = "not yet set"
+    _host = "not yet set"
+    _certificatePath = "not yet set"
+
+    # Init AWSIoTMQTTClient
+    myAWSIoTMQTTClient = None
+
+    def __init__(self, iniConfigPath):
+        self._iniConfigPath = iniConfigPath
+        self.initConfig()
+        self.prepareClient()
+
 
     # Custom MQTT message callback
     def customCallback(client, userdata, message):
@@ -58,21 +70,25 @@ class Publisher(object):
     # Jan19 -- args aren't or shouldn't be used anymore.
     args = parser.parse_args()
     # port = args.port
-    useWebsocket = args.useWebsocket
+    _useWebsocket = args.useWebsocket
 
 
-    # config
-    config = ConfigParser.ConfigParser()
-    config.read('../MQ/srlAwsConfig.ini')
+    def initConfig(self):
+        # config
+        config = ConfigParser.ConfigParser()
+        config.read(self._iniConfigPath)
 
-    basePath = config.get('DEFAULT','KEY_PATH')
+        # config.read('../MQ/srlAwsConfig.ini')
+        # config.read('MQ/srlAwsConfig.ini')
 
-    privateKeyPath = basePath + config.get('DEFAULT','PRIVATE_KEY_FILE')
-    # publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
-    certificatePath = basePath + config.get('DEFAULT','CERT_FILE')
-    rootCAPath = basePath + config.get('DEFAULT',"ROOT_CA")
-    topic = config.get('DEFAULT',"TOPIC")
-    host = config.get('DEFAULT',"ENDPOINT")
+        basePath = config.get('DEFAULT','KEY_PATH')
+
+        self._privateKeyPath = basePath + config.get('DEFAULT','PRIVATE_KEY_FILE')
+        # publicKeyPath = config.get('DEFAULT','PUBLIC_KEY_FILE')
+        self._certificatePath = basePath + config.get('DEFAULT','CERT_FILE')
+        self._rootCAPath = basePath + config.get('DEFAULT',"ROOT_CA")
+        self._topic = config.get('DEFAULT',"TOPIC")
+        self._host = config.get('DEFAULT',"ENDPOINT")
 
     # test
     # _message = "testMsg"
@@ -86,8 +102,8 @@ class Publisher(object):
         parser.error("X.509 cert authentication and WebSocket are mutual exclusive. Please pick one.")
         exit(2)
 
-    if not args.useWebsocket and not privateKeyPath:
-        parser.error("Missing credentials for authentication." + privateKeyPath)
+    if not args.useWebsocket and not _privateKeyPath:
+        parser.error("Missing credentials for authentication." + _privateKeyPath)
         exit(2)
 
     # Port defaults
@@ -104,25 +120,29 @@ class Publisher(object):
     streamHandler.setFormatter(formatter)
     logger.addHandler(streamHandler)
 
-    clientId = 'testClient'  # + str(time.clock()) # if same name then cxn prob possible if reused before recycled |bwilly
+    _clientId = 'testClient'  # + str(time.clock()) # if same name then cxn prob possible if reused before recycled |bwilly
 
-    # Init AWSIoTMQTTClient
-    myAWSIoTMQTTClient = None
-    if useWebsocket:
-        myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId, useWebsocket=True)
-        myAWSIoTMQTTClient.configureEndpoint(host, port)
-        myAWSIoTMQTTClient.configureCredentials(rootCAPath)
-    else:
-        myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId)
-        myAWSIoTMQTTClient.configureEndpoint(host, port)
-        myAWSIoTMQTTClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
 
-    # AWSIoTMQTTClient connection configuration
-    myAWSIoTMQTTClient.configureAutoReconnectBackoffTime(1, 32, 20)
-    myAWSIoTMQTTClient.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
-    myAWSIoTMQTTClient.configureDrainingFrequency(2)  # Draining: 2 Hz
-    myAWSIoTMQTTClient.configureConnectDisconnectTimeout(10)  # 10 sec
-    myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
+
+    def prepareClient(self):
+
+        if self._useWebsocket:
+            myAWSIoTMQTTClient = AWSIoTMQTTClient(self._clientId, self._useWebsocket)
+            myAWSIoTMQTTClient.configureEndpoint(self._host, self._port)
+            myAWSIoTMQTTClient.configureCredentials(self._rootCAPath)
+        else:
+            myAWSIoTMQTTClient = AWSIoTMQTTClient(self._clientId)
+            myAWSIoTMQTTClient.configureEndpoint(self._host, self.port)
+            myAWSIoTMQTTClient.configureCredentials(self._rootCAPath, self._privateKeyPath, self._certificatePath)
+
+        # AWSIoTMQTTClient connection configuration
+        myAWSIoTMQTTClient.configureAutoReconnectBackoffTime(1, 32, 20)
+        myAWSIoTMQTTClient.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+        myAWSIoTMQTTClient.configureDrainingFrequency(2)  # Draining: 2 Hz
+        myAWSIoTMQTTClient.configureConnectDisconnectTimeout(10)  # 10 sec
+        myAWSIoTMQTTClient.configureMQTTOperationTimeout(5)  # 5 sec
+
+        self.myAWSIoTMQTTClient = myAWSIoTMQTTClient
 
     def publish(self, msg):
         # Connect and subscribe to AWS IoT
@@ -135,8 +155,8 @@ class Publisher(object):
             message = {}
             message['message'] = msg
             messageJson = json.dumps(message)
-            self.myAWSIoTMQTTClient.publishAsync(self.topic, messageJson, 1)  # was sync
-            print('Published topic %s: %s\n' % (self.topic, messageJson))
+            self.myAWSIoTMQTTClient.publishAsync(self._topic, messageJson, 1)  # was sync
+            print('Published topic %s: %s\n' % (self._topic, messageJson))
 
         self.myAWSIoTMQTTClient.disconnect()
 
@@ -165,5 +185,4 @@ class Publisher(object):
         messageJson = json.dumps(message)
 
         return messageJson
-
 

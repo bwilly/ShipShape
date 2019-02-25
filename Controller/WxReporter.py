@@ -4,6 +4,7 @@ import glob
 
 from Sensors.DS18B20.DS18B20Reader import DallasTemptReaderDS18B20
 from MQ.pubTempt import Publisher
+
 # from MQ.pubTempt import buildTemptMsg
 
 class WxReporter(object):
@@ -24,6 +25,7 @@ class WxReporter(object):
         self.sensorPathSuffix = config['pathParts']['suffix']
 
     def loadSensorConfigDict(self):
+        print 'config path: ' + os.getcwd() + ' file hard-coded as sensor-config.json'
         with open('sensor-config.json') as config_file:
             return json.load(config_file)
 
@@ -91,33 +93,32 @@ class WxReporter(object):
         print "WxReporter SensorName[" + sensorName + "] celcius: " + str(tempt)
         return tempt
 
-    def publishValue(self, jsonPayload):
-        publisher = Publisher()
+    def publishValue(self, jsonPayload, publisher):
+        # publisher = Publisher('srlAwsConfig.ini')
         publisher.publish(jsonPayload)
 
     def __init__(self):
-
+        print 'config path: ' + os.getcwd()
         self.loadConfigVals()
 
 
-# dev-time test
-reporter = WxReporter()
-# dict = reporter.listSensors()
-# print 'physical sensors: '
-# if dict is not None:
-#     for entry in dict:
-#         print entry
-# else:
-#     print 'none'
-reporter.populateFoundList()
-print "Found " + str(reporter.availableSensorIdList)
-print "Found " + str(reporter.availableSensorName2DeviceDict)
-print "NOT found" + str(reporter.unavailableSensorIdList)
 
-print "\nLooping found sensors..."
-for sensor in reporter.availableSensorName2DeviceDict:
-    tempt = reporter.readTemperature(sensor)
-    print "\nreturn val " + str(tempt) + "\n"
-    publisher = Publisher()
-    msg = publisher.buildTemptMsg(sensor, tempt, 'C') # todo: publisher is instantiated in publishValue, too, so pick a place
-    reporter.publishValue(msg)
+def main():
+    reporter = WxReporter()
+
+    reporter.populateFoundList()
+    print "Found availableSensorIdList " + str(reporter.availableSensorIdList)
+    print "Found availableSensorName2DeviceDict " + str(reporter.availableSensorName2DeviceDict)
+    print "NOT found" + str(reporter.unavailableSensorIdList)
+
+    print "\nLooping found sensors..."
+    for sensor in reporter.availableSensorName2DeviceDict:
+        tempt = reporter.readTemperature(sensor)
+        print "\nreturn val " + str(tempt) + "\n"
+        publisher = Publisher('../srlAwsConfig.ini')
+        msg = publisher.buildTemptMsg(sensor, tempt, 'C')
+        reporter.publishValue(msg, publisher)
+
+
+if __name__ == "__main__":
+    main()
