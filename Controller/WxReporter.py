@@ -7,8 +7,20 @@ from MQ.pubTempt import Publisher
 
 # from MQ.pubTempt import buildTemptMsg
 
+# todo:now: when working with path issues, remember that from command-line something like this worked:
+# export PYTHONPATH=/path/to/dir:$PYTHONPATH
+# but i dont' want to have to execute that every time.
+#
+# this also seems useful:
+# import sys
+# sys.path.insert(0, "/home/myname/pythonfiles")
+#
+# also something to think about
+# python -m pkg.tests.core_test
+
 class WxReporter(object):
 
+    sensorConfigPath = ''  # sensor-config-test.json
     sensorPathPrefix = ''  # /sys/bus/w1/devices/
     sensorPathRoot = ''    # 28*
     sensorPathSuffix = ''  # /w1_slave
@@ -26,13 +38,13 @@ class WxReporter(object):
 
     def loadSensorConfigDict(self):
         print 'config path: ' + os.getcwd() + ' file hard-coded as sensor-config.json'
-        with open('sensor-config.json') as config_file:
+        with open(self.sensorConfigPath) as config_file:
             return json.load(config_file)
 
     # return list of sensors found in OS (no consider config file)
     def listSensors(self, devicePath ="/sys/bus/w1/devices/", w1Prefix = "28*"):
 
-        # enable kernel modules
+        # enable kernel modules. forces root password entry
         os.system('sudo modprobe w1-gpio')
         os.system('sudo modprobe w1-therm')
 
@@ -97,25 +109,30 @@ class WxReporter(object):
         # publisher = Publisher('srlAwsConfig.ini')
         publisher.publish(jsonPayload)
 
-    def __init__(self):
-        print 'config path: ' + os.getcwd()
+    def __init__(self, sensorConfigPath):
+        self.sensorConfigPath = sensorConfigPath
+        print 'CWD: ' + os.getcwd()
         self.loadConfigVals()
 
 
 
 def main():
-    reporter = WxReporter()
+    print '-- Running main() of: ' + __file__
+    reporter = WxReporter('../sensor-config.json')
+    # reporter = WxReporter('sensor-config.json')
 
     reporter.populateFoundList()
     print "Found availableSensorIdList " + str(reporter.availableSensorIdList)
     print "Found availableSensorName2DeviceDict " + str(reporter.availableSensorName2DeviceDict)
     print "NOT found" + str(reporter.unavailableSensorIdList)
 
+    publisher = Publisher('../srlAwsConfig.ini') # this path is relative to the python exe, not this py file.
+    # publisher = Publisher('srlAwsConfig.ini')
+
     print "\nLooping found sensors..."
     for sensor in reporter.availableSensorName2DeviceDict:
         tempt = reporter.readTemperature(sensor)
         print "\nreturn val " + str(tempt) + "\n"
-        publisher = Publisher('../srlAwsConfig.ini')
         msg = publisher.buildTemptMsg(sensor, tempt, 'C')
         reporter.publishValue(msg, publisher)
 

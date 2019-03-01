@@ -22,6 +22,8 @@ import argparse
 import json
 import ConfigParser
 
+import os
+
 AllowedActions = ['both', 'publish', 'subscribe']
 
 
@@ -38,8 +40,10 @@ class Publisher(object):
     myAWSIoTMQTTClient = None
 
     def __init__(self, iniConfigPath):
+        print 'AWS IoT Config file: ' + iniConfigPath + ' for: ' + __file__
         self._iniConfigPath = iniConfigPath
         self.initConfig()
+
         self.prepareClient()
 
 
@@ -75,11 +79,21 @@ class Publisher(object):
 
     def initConfig(self):
         # config
+        print "pubTempt loading config file: " + self._iniConfigPath
         config = ConfigParser.ConfigParser()
-        config.read(self._iniConfigPath)
 
+        config.read(self._iniConfigPath)
         # config.read('../MQ/srlAwsConfig.ini')
         # config.read('MQ/srlAwsConfig.ini')
+
+        try:
+            if len(config.defaults()) < 1:
+                raise BaseException('Could not locate AWS IoT config at: ' + self._iniConfigPath)
+            print config.defaults()
+        except BaseException as e:
+            print e
+            print 'CWD: ' + os.getcwd()
+
 
         basePath = config.get('DEFAULT','KEY_PATH')
 

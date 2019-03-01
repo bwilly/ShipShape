@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-
+# obsolete (Feb19)
 
 import os
 import time
