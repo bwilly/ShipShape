@@ -18,6 +18,12 @@ from MQ.pubTempt import Publisher
 # also something to think about
 # python -m pkg.tests.core_test
 
+# above may have helped/resolved for imports. But I still struggle with CWD for loading config files.
+# for now, if i run from root, then must change some seetings. set now for running from this dir of this file and from IDE.
+# commit note:
+# WxReporter working when run from its dir. Want to run from root of ShipSense? Then change config paths in WxReport main and values w/in the config ini.
+# Feb19
+
 class WxReporter(object):
 
     sensorConfigPath = ''  # sensor-config-test.json
