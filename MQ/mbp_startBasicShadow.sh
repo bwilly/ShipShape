@@ -7,9 +7,9 @@
 set -e
 
 # Check to see if root CA file exists, download if not
-if [ ! -f ./root-CA.crt ]; then
+if [ ! -f ./config/root-CA.crt ]; then
   printf "\nDownloading AWS IoT Root CA certificate from AWS...\n"
-  curl https://www.amazontrust.com/repository/AmazonRootCA1.pem > root-CA.crt
+  curl https://www.amazontrust.com/repository/AmazonRootCA1.pem > ./config/root-CA.crt
 fi
 
 # install AWS Device SDK for Python if not already installed
@@ -23,4 +23,4 @@ fi
 
 # run pub/sub sample app using certificates downloaded in package
 printf "\nRunning pub/sub sample application...\n"
-python basicShadowUpdater.py -n Mbp2016 -e a1p6rms6ftf35j-ats.iot.us-east-2.amazonaws.com -r root-CA.crt -c Mbp2016.cert.pem -k Mbp2016.private.key
+python basicShadowUpdater.py -n Mbp2016 -e a1p6rms6ftf35j-ats.iot.us-east-2.amazonaws.com -r ./config/root-CA.crt -c ./config/Mbp2016.cert.pem -k ./config/Mbp2016.private.key
