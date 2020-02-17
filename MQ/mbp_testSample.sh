@@ -22,4 +22,4 @@ fi
 
 # run pub/sub sample app using certificates downloaded in package
 printf "\nRunning pub/sub sample application...\n"
-python awsThingPubAsync.py -e a1p6rms6ftf35j-ats.iot.us-east-2.amazonaws.com -r root-CA.crt -c Mbp2016.cert.pem -k Mbp2016.private.key
+python awsThingPubAsync.py -e a1p6rms6ftf35j-ats.iot.us-east-2.amazonaws.com -r ./config/root-CA.crt -c ./config/Mbp2016.cert.pem -k ./config/Mbp2016.private.key
