@@ -1,12 +1,10 @@
 #!/usr/bin/python
 
-import sqlite3
+# obsolete (Feb19)
 
 import os
 import time
 import glob
-
-# Obsolete in favor of /Controller/WxReporter (Feb19)
 
 # @example: remote debug for python (Mar16-2014)
 # import sys
@@ -19,18 +17,16 @@ import glob
 
 
 # global variables
-speriod=(15*60)-1
-dbname='/home/pi/data/srlTempts.db'
+speriod = (15 * 60) - 1
 
 
 
 # store the temperature in the database
-def log_temperature(temp,deviceid):
+def log_temperature(tempt, sensorName):
+    conn = sqlite3.connect(dbname)
+    curs = conn.cursor()
 
-    conn=sqlite3.connect(dbname)
-    curs=conn.cursor()
-
-    curs.execute("INSERT INTO temps values(datetime('now'), (?), (?))", (temp,deviceid,))
+    curs.execute("INSERT INTO temps values(datetime('now'), (?), (?))", (tempt, sensorName,))
 
     # commit the changes
     conn.commit()
@@ -40,39 +36,37 @@ def log_temperature(temp,deviceid):
 
 # display the contents of the database
 def display_data():
-
-    conn=sqlite3.connect(dbname)
-    curs=conn.cursor()
+    conn = sqlite3.connect(dbname)
+    curs = conn.cursor()
 
     for row in curs.execute("SELECT * FROM temps"):
-        print str(row[0])+"	"+str(row[1])
+        print str(row[0]) + "	" + str(row[1])
 
     conn.close()
-
 
 
 # get temerature
 # returns None on error, or the temperature as a float
 def get_temp(devicefile):
-
     try:
-        fileobj = open(devicefile,'r')
+        fileobj = open(devicefile, 'r')
         lines = fileobj.readlines()
         fileobj.close()
     except:
+        print 'exception on fileobj open'
         return None
 
     # get the status from the end of line 1
     status = lines[0][-4:-1]
 
     # is the status is ok, get the temperature from line 2
-    if status=="YES":
+    if status == "YES":
         print status
-        rawline= lines[1] #lines[1][-6:-1]
+        rawline = lines[1]  # lines[1][-6:-1]
         tempstartindex = rawline.find("=") + 1
         tempstr = rawline[tempstartindex:-1]
-	print "tempstr: " + tempstr
-        tempvalue=float(tempstr)/1000
+        print "tempstr: " + tempstr
+        tempvalue = float(tempstr) / 1000
         print tempvalue
         return tempvalue
     else:
@@ -80,13 +74,12 @@ def get_temp(devicefile):
         return None
 
 
-
 # main function
 # This is where the program starts
-def devicetempt(deviceindex, deviceid):
+def devicetempt(sensorId, sensorName):
+    print ('devicetempt for index: ') + "[{}], {}".format(sensorId, sensorName)
 
-	#todo:give better error if array item in device list does not exist
-
+    # todo:give better error if array item in device list does not exist
 
     # enable kernel modules
     os.system('sudo modprobe w1-gpio')
@@ -94,40 +87,34 @@ def devicetempt(deviceindex, deviceid):
 
     # search for a device file that starts with 28
     devicelist = glob.glob('/sys/bus/w1/devices/28*')
-    if devicelist=='':
+    if devicelist == '' or len(devicelist) < 1:
         return None
     else:
         # append /w1slave to the device file
-        w1devicefile = devicelist[deviceindex] + '/w1_slave'
-	# bwilly use param for device index
+        w1devicefile = devicelist[sensorId] + '/w1_slave'
+    # bwilly use param for device index
 
-
-#    while True:
+    #    while True:
 
     # get the temperature from the device file
     temperature = get_temp(w1devicefile)
     if temperature != None:
-        print "temperature="+str(temperature)
+        print "temperature=" + str(temperature)
     else:
         # Sometimes reads fail on the first attempt
         # so we need to retry
         temperature = get_temp(w1devicefile)
-        print "temperature="+str(temperature)
+        print "temperature=" + str(temperature)
 
-        # Store the temperature in the database
-    log_temperature(temperature,deviceid)
-
-        # display the contents of the database
-#        display_data()
 
 #        time.sleep(speriod)
 
 
 def main():
-    #todo:fixme:the index of devices is arbitrary at this time and cannot be relied upon until understood.
-	devicetempt(0,"salon")
-	devicetempt(1,"portdeck")
+    # todo:fixme:the index of devices is arbitrary at this time and cannot be relied upon until understood.
+    devicetempt(0, "salon")
+    devicetempt(1, "portdeck")
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

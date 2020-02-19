@@ -1,0 +1,16 @@
+{
+  "comments": [{
+    "comment": "this file works w/ the legacy tempt reader of pre-Feb19 "
+  }],
+  "sensorGroup": [
+    {
+      "sensorName": "eastDoor",
+      "deviceId": "28-00000530087c"
+    },
+    {
+      "sensorName": "turtleTank",
+      "deviceId": "28-02039246ae40"
+    }
+  ]
+
+}
